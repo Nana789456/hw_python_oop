@@ -1,27 +1,32 @@
-from dataclasses import dataclass
-
-from typing import List, Union
+from dataclasses import dataclass, asdict
+from typing import Union
 
 
 @dataclass
 class InfoMessage:
     """Информационное сообщение о тренировке."""
+
     training_type: str
     duration: float
     distance: float
     speed: float
     calories: float
 
+    TRAINING_SUMMARY_TEMPLATE = (
+        'Тип тренировки: {training_type}; '
+        'Длительность: {duration:.3f} ч.; '
+        'Дистанция: {distance:.3f} км; '
+        'Ср. скорость: {speed:.3f} км/ч; '
+        'Потрачено ккал: {calories:.3f}.'
+    )
+
     def get_message(self):
-        return (f'Тип тренировки: {self.training_type}; '
-                f'Длительность: {"{:.3f}".format(self.duration)} ч.; '
-                f'Дистанция: {"{:.3f}".format(self.distance)} км; '
-                f'Ср. скорость: {"{:.3f}".format(self.speed)} км/ч; '
-                f'Потрачено ккал: {"{:.3f}".format(self.calories)}.')
+        return self.TRAINING_SUMMARY_TEMPLATE.format(**asdict(self))
 
 
 class Training:
     """Базовый класс тренировки."""
+
     LEN_STEP = 0.65
     M_IN_KM = 1000
     H_IN_M = 60
@@ -45,7 +50,8 @@ class Training:
 
     def get_spent_calories(self) -> float:
         """Получить количество затраченных калорий."""
-        raise NotImplementedError
+        raise NotImplementedError(f'Метод get_spent_calories не реализован '
+                                  f'в классе {type(self).__name__}')
 
     def show_training_info(self) -> InfoMessage:
         """Вернуть информационное сообщение о выполненной тренировке."""
@@ -57,6 +63,7 @@ class Training:
 
 class Running(Training):
     """Тренировка: бег."""
+
     CALORIES_MEAN_SPEED_MULTIPLIER = 18
     CALORIES_MEAN_SPEED_SHIFT = 1.79
 
@@ -77,9 +84,10 @@ class Running(Training):
 
 class SportsWalking(Training):
     """Тренировка: спортивная ходьба."""
+
     CALORIES_WEIGHT_MULTIPLIER_1 = 0.035
     CALORIES_WEIGHT_MULTIPLIER_2 = 0.029
-    KM_H_TO_M_S = 0.278
+    KM_H_TO_M_S = round(Training.M_IN_KM / 60 / 60, 3)
     SM_IN_M = 100
 
     def __init__(self,
@@ -100,7 +108,7 @@ class SportsWalking(Training):
                 + ((self.get_mean_speed()
                     * self.KM_H_TO_M_S) ** 2
                     / (self.height
-                       / self.SM_IN_M))
+                        / self.SM_IN_M))
                 * self.CALORIES_WEIGHT_MULTIPLIER_2
                 * self.weight
             )
@@ -111,9 +119,10 @@ class SportsWalking(Training):
 
 class Swimming(Training):
     """Тренировка: плавание."""
+
     LEN_STEP = 1.38
     SWM_CALORIES_MEAN_SPEED_SHIFT = 1.1
-    SWM_CALORIES_MEAN_SPEED_MULTIPLIER = 2
+    SWM_CALORIES_MULTIPLIER = 2
 
     def __init__(self,
                  action: int,
@@ -140,25 +149,28 @@ class Swimming(Training):
                 self.get_mean_speed()
                 + self.SWM_CALORIES_MEAN_SPEED_SHIFT
             )
-            * self.SWM_CALORIES_MEAN_SPEED_MULTIPLIER
+            * self.SWM_CALORIES_MULTIPLIER
             * self.weight
             * self.duration
         )
 
 
-def read_package(workout_type: str, data: List[Union[int, float]]) -> Training:
+def read_package(workout_type: str, data: list[Union[int, float]]) -> Training:
     """Прочитать данные полученные от датчиков."""
-    training_types = {'SWM': Swimming, 'RUN': Running, 'WLK': SportsWalking}
+    training_types = {
+        'SWM': Swimming,
+        'RUN': Running,
+        'WLK': SportsWalking
+    }
 
     if workout_type not in training_types:
-        raise ValueError(f'Working only with {list(training_types.keys())}')
+        raise ValueError(f'Working only with {workout_type}')
     return training_types[workout_type](*data)
 
 
 def main(training: Training) -> None:
     """Главная функция."""
-    info = training.show_training_info()
-    print(info.get_message())
+    print(training.show_training_info().get_message())
 
 
 if __name__ == '__main__':
@@ -169,5 +181,4 @@ if __name__ == '__main__':
     ]
 
     for workout_type, data in packages:
-        training = read_package(workout_type, data)
-        main(training)
+        main(read_package(workout_type, data))
