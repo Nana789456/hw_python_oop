@@ -30,6 +30,7 @@ class Training:
     LEN_STEP = 0.65
     M_IN_KM = 1000
     H_IN_M = 60
+    M_IN_S = 60
 
     def __init__(self,
                  action: int,
@@ -87,7 +88,11 @@ class SportsWalking(Training):
 
     CALORIES_WEIGHT_MULTIPLIER_1 = 0.035
     CALORIES_WEIGHT_MULTIPLIER_2 = 0.029
-    KM_H_TO_M_S = round(Training.M_IN_KM / 60 / 60, 3)
+    KM_H_TO_M_S = round(
+        Training.M_IN_KM
+        / Training.H_IN_M
+        / Training.M_IN_S, 3
+    )
     SM_IN_M = 100
 
     def __init__(self,
@@ -122,7 +127,7 @@ class Swimming(Training):
 
     LEN_STEP = 1.38
     SWM_CALORIES_MEAN_SPEED_SHIFT = 1.1
-    SWM_CALORIES_MULTIPLIER = 2
+    SWM_CALORIES_WEIGHT_MULTIPLIER = 2
 
     def __init__(self,
                  action: int,
@@ -149,23 +154,25 @@ class Swimming(Training):
                 self.get_mean_speed()
                 + self.SWM_CALORIES_MEAN_SPEED_SHIFT
             )
-            * self.SWM_CALORIES_MULTIPLIER
+            * self.SWM_CALORIES_WEIGHT_MULTIPLIER
             * self.weight
             * self.duration
         )
 
 
+TRAINING_TYPES = {
+    'SWM': Swimming,
+    'RUN': Running,
+    'WLK': SportsWalking
+}
+
+
 def read_package(workout_type: str, data: list[Union[int, float]]) -> Training:
     """Прочитать данные полученные от датчиков."""
-    training_types = {
-        'SWM': Swimming,
-        'RUN': Running,
-        'WLK': SportsWalking
-    }
 
-    if workout_type not in training_types:
-        raise ValueError(f'Working only with {workout_type}')
-    return training_types[workout_type](*data)
+    if workout_type not in TRAINING_TYPES:
+        raise ValueError(f'Not working with {workout_type}')
+    return TRAINING_TYPES[workout_type](*data)
 
 
 def main(training: Training) -> None:
